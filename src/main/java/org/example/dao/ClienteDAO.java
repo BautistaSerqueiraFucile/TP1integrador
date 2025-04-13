@@ -1,5 +1,6 @@
 package org.example.dao;
 
+import org.example.dto.Cliente_FacturacionDTO;
 import org.example.entities.Cliente;
 import java.sql.*;
 import java.util.ArrayList;
@@ -90,5 +91,34 @@ public class ClienteDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public List<Cliente_FacturacionDTO> getClienteFacturacion() {
+
+        List<Cliente_FacturacionDTO> clientes = new ArrayList<>();
+        //Clientes ordenados por facturación total
+        String sql = """
+                    SELECT c.nombre, SUM(fp.cantidad * p.valor) AS total_facturado
+                    FROM Factura f
+                    JOIN Cliente c ON f.idCliente = c.idCliente
+                    JOIN Factura_Producto fp ON f.idFactura = fp.idFactura
+                    JOIN Producto p ON fp.idProducto = p.idProducto
+                    GROUP BY c.idCliente
+                    ORDER BY total_facturado DESC
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    clientes.add(new Cliente_FacturacionDTO(
+                            rs.getString("nombre"),
+                            rs.getFloat("total_facturado")
+                    ));
+                }
+            }
+         catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return clientes;
     }
 }
